@@ -15,10 +15,14 @@ use std::fs::create_dir_all;
 
 mod args;
 
-
 fn main() {
     let opt: Opt = Opt::from_args();
     let files = opt.files;
+
+    if files.len() < 1 {
+        println!("No files provided! Exiting..");
+        std::process::exit(0);
+    }
 
     process_files(files).unwrap();
 }
