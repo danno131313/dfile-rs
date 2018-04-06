@@ -1,7 +1,3 @@
-//! # dotfiler
-//! A program to easily hardlink dotfiles to a directory for git management and backup.
-//! Uses your $HOME and $DOTFILE_PATH environment variables.
-
 #[macro_use]
 extern crate structopt;
 
