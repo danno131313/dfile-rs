@@ -5,6 +5,8 @@ extern crate structopt;
 use args::*;
 use std::io;
 use std::io::Write;
+use std::fs::OpenOptions;
+use std::process::exit;
 use git2::Repository;
 use std::env::current_dir;
 use std::env::var;
@@ -21,12 +23,12 @@ fn main() {
 
     if files.len() < 1 {
         println!("No files provided! Exiting..");
-        std::process::exit(0);
+        exit(0);
     }
-    
+
     let dotfile_path = match var("DOTFILE_PATH") {
         Ok(path) => path,
-        Err(_) => setup()
+        Err(_) => setup(),
     };
 
     match Repository::open(dotfile_path) {
@@ -110,9 +112,10 @@ fn new_git() {
     io::stdin().read_line(&mut input).unwrap();
     input.pop();
     if input.as_str() == "y" {
-        Repository::init(var("DOTFILE_PATH").unwrap()).expect("Couldn't create a new git repo with DOTFILE_PATH");
+        Repository::init(var("DOTFILE_PATH").unwrap())
+            .expect("Couldn't create a new git repo with DOTFILE_PATH");
     } else {
-        std::process::exit(0);
+        exit(0);
     }
 }
 
@@ -124,7 +127,10 @@ fn setup() -> String {
     io::stdin().read_line(&mut input).unwrap();
     input.pop();
 
-    if &input == "y" {
+    if &input != "y" {
+        println!("Cannot add files without DOTFILE_PATH, exiting...");
+        exit(0);
+    } else {
         print!("Do you use bash or zsh? ");
         io::stdout().flush().unwrap();
         let mut shell = String::new();
@@ -136,12 +142,31 @@ fn setup() -> String {
         let mut path = String::new();
         io::stdin().read_line(&mut path).unwrap();
         path.pop();
-        
+
+        let mut rcfile = var("HOME").unwrap();
+        match shell.as_str() {
+            "bash" => rcfile.push_str("/.bashrc"),
+            "zsh" => rcfile.push_str("/.zshrc"),
+            _x => {
+                println!("{} is not a supported shell!", _x);
+                exit(1);
+            }
+        }
+
+        let mut file = OpenOptions::new()
+            .append(true)
+            .open(rcfile)
+            .unwrap();
+
+        writeln!(file, "export DOTFILE_PATH={}", path).unwrap();
+
+        Command::new(format!("export DOTFILE_PATH={}", path)).spawn().unwrap();
+
         create_dir_all(&path).unwrap_or_else(|_| {
             println!("Couldn't create DOTFILE_DIR with that path! Exiting...");
-            std::process::exit(1);
+            exit(1);
         });
-    }
 
-    return String::new();
+        return path;
+    }
 }
