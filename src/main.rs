@@ -1,7 +1,11 @@
+extern crate git2;
 #[macro_use]
 extern crate structopt;
 
 use args::*;
+use std::io;
+use std::io::Write;
+use git2::Repository;
 use std::env::current_dir;
 use std::env::var;
 use std::path::{Path, PathBuf};
@@ -19,17 +23,26 @@ fn main() {
         println!("No files provided! Exiting..");
         std::process::exit(0);
     }
+    
+    let dotfile_path = match var("DOTFILE_PATH") {
+        Ok(path) => path,
+        Err(_) => setup()
+    };
 
-    process_files(files).unwrap();
+    match Repository::open(dotfile_path) {
+        Ok(_) => process_files(files).unwrap(),
+        Err(_) => {
+            new_git();
+            process_files(files).unwrap();
+        }
+    };
 }
 
 /// Hard links each file provided to your dotfile directory, minus any dot prefixes.
 /// Will structure the folders the same way relative to your home directory.
 fn process_files(files: Vec<PathBuf>) -> Result<(), std::io::Error> {
     let home: PathBuf = var("HOME").expect("No $HOME variable set!").into();
-    let dotfile_path: PathBuf = var("DOTFILE_PATH")
-        .expect("No $DOTFILE_PATH variable set!")
-        .into();
+    let dotfile_path: PathBuf = var("DOTFILE_PATH").unwrap().into();
     let curr_dir: PathBuf = current_dir().unwrap();
 
     for file in files.into_iter() {
@@ -41,7 +54,7 @@ fn process_files(files: Vec<PathBuf>) -> Result<(), std::io::Error> {
         // Create new directories in dotfile path if they don't exist
         let newpath_clone = newpath.clone();
         let dirs_only = newpath_clone.parent().unwrap();
-        create_dir_all(dirs_only).unwrap();
+        create_dir_all(dirs_only)?;
 
         // Create hard links
         let output = Command::new("ln")
@@ -51,7 +64,10 @@ fn process_files(files: Vec<PathBuf>) -> Result<(), std::io::Error> {
             .expect("Couldn't make static link!");
 
         if output.status.success() {
-            println!("{} has been successfully hard-linked to dotfiles directory.", name);
+            println!(
+                "{} has been successfully hard-linked to dotfiles directory.",
+                name
+            );
         } else {
             println!("Error: {}", String::from_utf8_lossy(&output.stderr));
         }
@@ -67,11 +83,7 @@ fn get_dest(fullpath: &PathBuf, home: &PathBuf, dotfile_path: &PathBuf) -> PathB
     let home_path_size: usize = home.iter().count();
 
     // Gets path to existing dotfile relative to home dir
-    let relative_path: PathBuf = fullpath
-        .clone()
-        .into_iter()
-        .skip(home_path_size)
-        .collect();
+    let relative_path: PathBuf = fullpath.clone().into_iter().skip(home_path_size).collect();
 
     // Path of new hard link, with dots
     let newpath: PathBuf = dotfile_path.join(&relative_path);
@@ -88,4 +100,48 @@ fn get_dest(fullpath: &PathBuf, home: &PathBuf, dotfile_path: &PathBuf) -> PathB
     }
 
     return dotless_newpath;
+}
+
+/// Creates a new git repo at the DOTFILE_PATH directory
+fn new_git() {
+    print!("No git repo found at DOTFILE_PATH, would you like to create one? (y/n) ");
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    input.pop();
+    if input.as_str() == "y" {
+        Repository::init(var("DOTFILE_PATH").unwrap()).expect("Couldn't create a new git repo with DOTFILE_PATH");
+    } else {
+        std::process::exit(0);
+    }
+}
+
+/// Sets up the DOTFILE_PATH environment variable by appending it to your bash_rc or zshrc
+fn setup() -> String {
+    println!("You haven't set up a DOTFILE_PATH environment variable yet!");
+    print!("Would you like to? (y/n) ");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    input.pop();
+
+    if &input == "y" {
+        print!("Do you use bash or zsh? ");
+        io::stdout().flush().unwrap();
+        let mut shell = String::new();
+        io::stdin().read_line(&mut shell).unwrap();
+        shell.pop();
+
+        print!("What would you like the new dotfile git path to be? ");
+        io::stdout().flush().unwrap();
+        let mut path = String::new();
+        io::stdin().read_line(&mut path).unwrap();
+        path.pop();
+        
+        create_dir_all(&path).unwrap_or_else(|_| {
+            println!("Couldn't create DOTFILE_DIR with that path! Exiting...");
+            std::process::exit(1);
+        });
+    }
+
+    return String::new();
 }
