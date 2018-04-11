@@ -5,6 +5,7 @@ authors = ["Danny Kavanagh <dankava13@gmail.com>"]
 description = "A program to easily collect and maintain your dotfiles, with git integration."
 license = "MIT/Apache-2.0"
 repository = "https://github.com/danno131313/dfile-rs"
+readme = "README.md"
 keywords = ["dotfiles", "dot", "files", "file", "git"]
 categories = ["command-line-utilities", "development-tools", "config"]
 
