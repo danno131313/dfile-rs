@@ -8,11 +8,7 @@ use std::process::{exit, Command};
 
 /// Creates a new git repo at the DOTFILE_PATH directory
 pub fn new_git() {
-    print!("No git repo found at DOTFILE_PATH, would you like to create one? (y/n) ");
-    io::stdout().flush().unwrap();
-    let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
-    input.pop();
+    let input = prompt("No git repo found at DOTFILE_PATH, would you like to create one? (y/n) ");
     if input.as_str() == "y" {
         Repository::init(var("DOTFILE_PATH").unwrap())
             .expect("Couldn't create a new git repo with DOTFILE_PATH");
@@ -24,27 +20,14 @@ pub fn new_git() {
 /// Sets up the DOTFILE_PATH environment variable by appending it to your bash_rc or zshrc
 pub fn setup() -> String {
     println!("You haven't set up a DOTFILE_PATH environment variable yet!");
-    print!("Would you like to? (y/n) ");
-    io::stdout().flush().unwrap();
-    let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
-    input.pop();
+    let input = prompt("Would you like to? (y/n) ");
 
     if &input != "y" {
         println!("Cannot add files without DOTFILE_PATH, exiting...");
         exit(0);
     } else {
-        print!("Do you use bash or zsh? ");
-        io::stdout().flush().unwrap();
-        let mut shell = String::new();
-        io::stdin().read_line(&mut shell).unwrap();
-        shell.pop();
-
-        print!("What would you like the new dotfile git path to be? ");
-        io::stdout().flush().unwrap();
-        let mut path = String::new();
-        io::stdin().read_line(&mut path).unwrap();
-        path.pop();
+        let shell = prompt("Do you use bash or zsh? ");
+        let path = prompt("What would you like the new dotfile git path to be? ");
 
         let mut rcfile = var("HOME").unwrap();
         match shell.as_str() {
@@ -75,3 +58,14 @@ pub fn setup() -> String {
         return path;
     }
 }
+
+fn prompt(s: &str) -> String {
+    print!("{}", s);
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    input.pop();
+
+    return input;
+}
+
