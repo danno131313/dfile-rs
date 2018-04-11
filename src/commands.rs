@@ -158,5 +158,5 @@ fn get_current_time() -> String {
 
 fn has_remote(dotfile_path: &str) -> bool {
     let repo = Repository::open(dotfile_path).unwrap();
-    return repo.remotes().unwrap().len() < 1;
+    return repo.remotes().unwrap().len() > 1;
 }
