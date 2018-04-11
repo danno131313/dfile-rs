@@ -8,7 +8,7 @@ use git2::Repository;
 use std::env::var;
 use std::process::exit;
 use structopt::StructOpt;
-use setup::*;
+use setup::{new_git, setup};
 use commands::*;
 
 mod args;

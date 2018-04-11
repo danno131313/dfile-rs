@@ -8,6 +8,8 @@ use std::env::current_dir;
 use std::env::var;
 use std::io;
 use std::process::exit;
+use git2::Repository;
+use super::setup::setup_remote;
 
 /// Hard links each file provided to your dotfile directory, minus any dot prefixes.
 /// Will structure the folders the same way relative to your home directory.
@@ -97,14 +99,29 @@ pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
         exit(0);
     }
 
-    let mut push = Command::new("git")
-        .arg("-C")
-        .arg(format!("{}", dotfile_path))
-        .arg("push")
-        .spawn()
-        .map_err(|_| "could not push changes")?;
+    if has_remote(&dotfile_path) {
+        let mut push = Command::new("git")
+            .arg("-C")
+            .arg(format!("{}", dotfile_path))
+            .arg("push")
+            .spawn()
+            .map_err(|_| "could not push changes")?;
 
-    push.wait().unwrap();
+        push.wait().unwrap();
+    } else {
+        setup_remote(&dotfile_path);
+        let mut push = Command::new("git")
+            .arg("-C")
+            .arg(format!("{}", dotfile_path))
+            .arg("push")
+            .arg("-u")
+            .arg("origin")
+            .arg("master")
+            .spawn()
+            .map_err(|_| "could not push changes to new remote repo")?;
+
+        push.wait().unwrap();
+    }
 
     Ok(())
 }
@@ -137,4 +154,9 @@ fn get_dest(fullpath: &PathBuf, home: &PathBuf, dotfile_path: &PathBuf) -> PathB
 
 fn get_current_time() -> String {
     strftime("%b %d, %Y (%H:%M:%S)", &now()).unwrap()
+}
+
+fn has_remote(dotfile_path: &str) -> bool {
+    let repo = Repository::open(dotfile_path).unwrap();
+    return repo.remotes().unwrap().len() < 1;
 }

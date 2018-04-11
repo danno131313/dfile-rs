@@ -68,3 +68,25 @@ fn prompt(s: &str) -> String {
 
     return input;
 }
+
+pub fn setup_remote(dotfile_path: &str) {
+    let response =
+        prompt("You haven't set up a remote for you dotfile repo yet, would you like to? (y/n) ");
+
+    if response == "n" {
+        exit(0);
+    } else {
+        let remote = prompt("What is the address of the git remote repo?: ");
+        let mut handle = Command::new("git")
+            .arg("-C")
+            .arg(format!("{}", dotfile_path))
+            .arg("remote")
+            .arg("add")
+            .arg("origin")
+            .arg(&remote)
+            .spawn()
+            .unwrap();
+
+        handle.wait().unwrap();
+    }
+}
