@@ -8,7 +8,7 @@ use git2::Repository;
 use std::env::var;
 use std::process::exit;
 use structopt::StructOpt;
-use setup::{new_git, setup};
+use setup::new_git;
 use commands::*;
 
 mod args;
@@ -21,7 +21,10 @@ fn main() {
 
     let dotfile_path = match var("DOTFILE_PATH") {
         Ok(path) => path,
-        Err(_) => setup(),
+        Err(_) => {
+            println!("You need to set up a DOTFILE_PATH environment variable\nto use this program. Exiting...");
+            exit(0);
+        }
     };
 
     if files.len() < 1 {
