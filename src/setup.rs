@@ -27,7 +27,7 @@ fn prompt(s: &str) -> String {
 
 pub fn setup_remote(dotfile_path: &str) {
     let response =
-        prompt("You haven't set up a remote for you dotfile repo yet, would you like to? (y/n) ");
+        prompt("You haven't set up a remote for your dotfile repo yet, would you like to? (y/n) ");
 
     if response == "n" {
         exit(0);
