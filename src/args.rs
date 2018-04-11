@@ -6,7 +6,7 @@ use std::path::PathBuf;
 /// Uses your $HOME and $DOTFILE_PATH environment variables.
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "dotfiler", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+#[structopt(name = "dfile", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 pub struct Opt {
     /// Files to add to dotfile path
     #[structopt(name = "FILES", parse(from_os_str))]

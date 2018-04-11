@@ -1,5 +1,5 @@
 [package]
-name = "dotfiler"
+name = "dfile"
 version = "0.1.0"
 authors = ["Danny Kavanagh <dankava13@gmail.com>"]
 
