@@ -1,7 +1,7 @@
-use std::io;
-use std::io::Write;
 use git2::Repository;
 use std::env::var;
+use std::io;
+use std::io::Write;
 use std::process::{exit, Command};
 
 /// Creates a new git repo at the DOTFILE_PATH directory

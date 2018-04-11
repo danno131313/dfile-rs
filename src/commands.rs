@@ -1,16 +1,16 @@
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use time::{now, strftime};
-use std::fs::create_dir_all;
-use std::ffi::OsString;
-use std::os::unix::ffi::OsStringExt;
-use std::env::current_dir;
-use std::env::var;
-use std::io;
-use std::process::exit;
+use super::setup::setup_remote;
 use git2::Repository;
 use glob::glob;
-use super::setup::setup_remote;
+use std::env::current_dir;
+use std::env::var;
+use std::ffi::OsString;
+use std::fs::create_dir_all;
+use std::io;
+use std::os::unix::ffi::OsStringExt;
+use std::path::{Path, PathBuf};
+use std::process::exit;
+use std::process::Command;
+use time::{now, strftime};
 
 /// Hard links each file provided to your dotfile directory, minus any dot prefixes.
 /// Will structure the folders the same way relative to your home directory.

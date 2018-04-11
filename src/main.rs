@@ -5,16 +5,16 @@ extern crate structopt;
 extern crate time;
 
 use args::*;
+use commands::*;
 use git2::Repository;
+use setup::new_git;
 use std::env::var;
 use std::process::exit;
 use structopt::StructOpt;
-use setup::new_git;
-use commands::*;
 
 mod args;
-mod setup;
 mod commands;
+mod setup;
 
 fn main() {
     let opt: Opt = Opt::from_args();
