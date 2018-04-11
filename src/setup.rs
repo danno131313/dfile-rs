@@ -68,4 +68,3 @@ fn prompt(s: &str) -> String {
 
     return input;
 }
-
