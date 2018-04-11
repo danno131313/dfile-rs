@@ -1,4 +1,5 @@
 extern crate git2;
+extern crate glob;
 #[macro_use]
 extern crate structopt;
 extern crate time;

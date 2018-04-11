@@ -1,5 +1,4 @@
 use super::*;
-use std::path::PathBuf;
 
 /// A program to easily hardlink dotfiles to a directory for git management and backup.
 ///
@@ -10,6 +9,6 @@ use std::path::PathBuf;
 #[structopt(name = "dfile", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 pub struct Opt {
     /// Files to add to dotfile path
-    #[structopt(name = "FILES", parse(from_os_str))]
-    pub files: Vec<PathBuf>,
+    #[structopt(name = "FILES")]
+    pub files: Vec<String>,
 }

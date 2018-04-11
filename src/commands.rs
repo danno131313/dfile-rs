@@ -9,60 +9,66 @@ use std::env::var;
 use std::io;
 use std::process::exit;
 use git2::Repository;
+use glob::glob;
 use super::setup::setup_remote;
 
 /// Hard links each file provided to your dotfile directory, minus any dot prefixes.
 /// Will structure the folders the same way relative to your home directory.
-pub fn process_files(files: Vec<PathBuf>) -> Result<(), io::Error> {
+pub fn process_files(files: Vec<String>) -> Result<(), io::Error> {
     let home: PathBuf = var("HOME").expect("No $HOME variable set!").into();
     let dotfile_path: PathBuf = var("DOTFILE_PATH").unwrap().into();
     let curr_dir: PathBuf = current_dir().unwrap();
 
-    for file in files.into_iter() {
-        let name = file.to_str().unwrap();
-        let fullpath = curr_dir.join(&file);
+    for maybe_glob in files.into_iter() {
+        let globbed = glob(&maybe_glob).unwrap();
 
-        let newpath: PathBuf = get_dest(&fullpath, &home, &dotfile_path);
+        for maybe_file in globbed {
+            let file = maybe_file.unwrap();
+            let name = file.to_str().unwrap();
+            let fullpath = curr_dir.join(&file);
 
-        // Create new directories in dotfile path if they don't exist
-        let newpath_clone = newpath.clone();
-        let dirs_only = newpath_clone.parent().unwrap();
-        create_dir_all(dirs_only)?;
+            let newpath: PathBuf = get_dest(&fullpath, &home, &dotfile_path);
 
-        // Create hard links
-        let output = Command::new("ln")
-            .arg(fullpath)
-            .arg(newpath)
-            .output()
-            .expect("Couldn't make static link!");
+            // Create new directories in dotfile path if they don't exist
+            let newpath_clone = newpath.clone();
+            let dirs_only = newpath_clone.parent().unwrap();
+            create_dir_all(dirs_only)?;
 
-        if output.status.success() {
-            println!(
-                "{} has been successfully hard-linked to dotfiles directory.",
-                name
-            );
-
-            let dotfile_str = dotfile_path.to_str().unwrap();
-            let newpath_str = newpath_clone.to_str().unwrap();
-
-            let _ = Command::new("git")
-                .arg("-C")
-                .arg(format!("{}", dotfile_str))
-                .arg("add")
-                .arg(format!("{}", newpath_str))
+            // Create hard links
+            let output = Command::new("ln")
+                .arg(fullpath)
+                .arg(newpath)
                 .output()
-                .unwrap();
+                .expect("Couldn't make static link!");
 
-            let _ = Command::new("git")
-                .arg("-C")
-                .arg(format!("{}", dotfile_str))
-                .arg("commit")
-                .arg("-m")
-                .arg(format!("\"add {}\"", name))
-                .output()
-                .unwrap();
-        } else {
-            println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+            if output.status.success() {
+                println!(
+                    "{} has been successfully hard-linked to dotfiles directory.",
+                    name
+                );
+
+                let dotfile_str = dotfile_path.to_str().unwrap();
+                let newpath_str = newpath_clone.to_str().unwrap();
+
+                let _ = Command::new("git")
+                    .arg("-C")
+                    .arg(format!("{}", dotfile_str))
+                    .arg("add")
+                    .arg(format!("{}", newpath_str))
+                    .output()
+                    .unwrap();
+
+                let _ = Command::new("git")
+                    .arg("-C")
+                    .arg(format!("{}", dotfile_str))
+                    .arg("commit")
+                    .arg("-m")
+                    .arg(format!("\"add {}\"", name))
+                    .output()
+                    .unwrap();
+            } else {
+                println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+            }
         }
     }
 
@@ -94,7 +100,7 @@ pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
     let out = commit.stdout;
     let out_msg: String = OsString::from_vec(out).into_string().unwrap();
 
-    if out_msg.contains("nothing to commit") {
+    if out_msg.contains("nothing to commit") && out_msg.contains("up to date") {
         println!("Nothing to update, exiting...");
         exit(0);
     }
