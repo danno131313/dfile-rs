@@ -2,6 +2,11 @@
 name = "dfile"
 version = "0.1.0"
 authors = ["Danny Kavanagh <dankava13@gmail.com>"]
+description = "A program to easily collect and maintain your dotfiles, with git integration."
+license = "MIT/Apache-2.0"
+repository = "https://github.com/danno131313/dfile-rs"
+keywords = ["dotfiles", "dot", "files", "file", "git", "config", "configuration"]
+categories = ["command-line-utilities", "development-tools", "configuration"]
 
 [dependencies]
 structopt = "0.2.5"
