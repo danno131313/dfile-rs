@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 /// A program to easily hardlink dotfiles to a directory for git management and backup.
 ///
-/// Uses your $HOME and $DOTFILE_PATH environment variables. $DOTFILE_PATH is a folder
-/// in your home directory to store the dotfiles together.
+/// Uses your $HOME and $DOTFILE_PATH environment variables.
+/// $DOTFILE_PATH should be a folder in your home directory where the hard links will be stored.
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dfile", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
