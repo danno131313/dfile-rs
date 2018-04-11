@@ -2,9 +2,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use time::{now, strftime};
 use std::fs::create_dir_all;
+use std::ffi::OsString;
+use std::os::unix::ffi::OsStringExt;
 use std::env::current_dir;
 use std::env::var;
 use std::io;
+use std::process::exit;
 
 /// Hard links each file provided to your dotfile directory, minus any dot prefixes.
 /// Will structure the folders the same way relative to your home directory.
@@ -53,7 +56,7 @@ pub fn process_files(files: Vec<PathBuf>) -> Result<(), io::Error> {
                 .arg(format!("{}", dotfile_str))
                 .arg("commit")
                 .arg("-m")
-                .arg(format!("\"add {}\"", newpath_str))
+                .arg(format!("\"add {}\"", name))
                 .output()
                 .unwrap();
         } else {
@@ -77,16 +80,22 @@ pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
 
     add.wait().unwrap();
 
-    let mut commit = Command::new("git")
+    let commit = Command::new("git")
         .arg("-C")
         .arg(format!("{}", dotfile_path))
         .arg("commit")
         .arg("-m")
         .arg(format!("\"update changes: {}\"", get_current_time()))
-        .spawn()
+        .output()
         .map_err(|_| "could not commit changes")?;
 
-    commit.wait().unwrap();
+    let out = commit.stdout;
+    let out_msg: String = OsString::from_vec(out).into_string().unwrap();
+
+    if out_msg.contains("nothing to commit") {
+        println!("Nothing to update, exiting...");
+        exit(0);
+    }
 
     let mut push = Command::new("git")
         .arg("-C")
