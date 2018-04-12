@@ -1,20 +1,37 @@
 extern crate git2;
 extern crate glob;
 #[macro_use]
-extern crate structopt;
+pub extern crate structopt;
 extern crate time;
 
-use args::*;
-use commands::*;
+use commands::{git_update, process_files, run_git};
 use git2::Repository;
 use setup::new_git;
 use std::env::var;
 use std::process::exit;
 use structopt::StructOpt;
 
-mod args;
 mod commands;
 mod setup;
+
+/// A program to easily hardlink dotfiles to a directory for git management and backup.
+///
+/// Uses your $HOME and $DOTFILE_PATH environment variables.
+/// $DOTFILE_PATH should be a folder in your home directory where the hard links will be stored.
+///
+/// Running 'dfile' alone will attempt to add, commit, and push all changes
+/// made to your dotfiles.
+///
+/// Can also be run as 'dfile git [COMMANDS]' to run native git commands for your
+/// dotfile directory.
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "dfile", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+pub struct Opt {
+    /// Files to add to dotfile path
+    #[structopt(name = "FILES")]
+    pub files: Vec<String>,
+}
 
 fn main() {
     let opt: Opt = Opt::from_args();
@@ -43,11 +60,15 @@ fn main() {
         }
     }
 
-    match Repository::open(dotfile_path) {
-        Ok(_) => process_files(files).unwrap(),
-        Err(_) => {
-            new_git();
-            process_files(files).unwrap();
-        }
-    };
+    if files[0] == "git" {
+        run_git(files, &dotfile_path);
+    } else {
+        match Repository::open(dotfile_path) {
+            Ok(_) => process_files(files).unwrap(),
+            Err(_) => {
+                new_git();
+                process_files(files).unwrap();
+            }
+        };
+    }
 }

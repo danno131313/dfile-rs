@@ -1,19 +1,17 @@
 use super::setup::setup_remote;
 use git2::Repository;
 use glob::glob;
-use std::env::current_dir;
-use std::env::var;
+use std::env::{current_dir, var};
 use std::ffi::OsString;
 use std::fs::create_dir_all;
 use std::io;
 use std::os::unix::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
-use std::process::exit;
-use std::process::Command;
+use std::process::{exit, Command};
 use time::{now, strftime};
 
-/// Hard links each file provided to your dotfile directory, minus any dot prefixes.
-/// Will structure the folders the same way relative to your home directory.
+// Hard links each file provided to your dotfile directory, minus any dot prefixes.
+// Will structure the folders the same way relative to your home directory.
 pub fn process_files(files: Vec<String>) -> Result<(), io::Error> {
     let home: PathBuf = var("HOME").expect("No $HOME variable set!").into();
     let dotfile_path: PathBuf = var("DOTFILE_PATH").unwrap().into();
@@ -50,7 +48,7 @@ pub fn process_files(files: Vec<String>) -> Result<(), io::Error> {
                 let dotfile_str = dotfile_path.to_str().unwrap();
                 let newpath_str = newpath_clone.to_str().unwrap();
 
-                let _ = Command::new("git")
+                Command::new("git")
                     .arg("-C")
                     .arg(format!("{}", dotfile_str))
                     .arg("add")
@@ -58,7 +56,7 @@ pub fn process_files(files: Vec<String>) -> Result<(), io::Error> {
                     .output()
                     .unwrap();
 
-                let _ = Command::new("git")
+                Command::new("git")
                     .arg("-C")
                     .arg(format!("{}", dotfile_str))
                     .arg("commit")
@@ -75,8 +73,8 @@ pub fn process_files(files: Vec<String>) -> Result<(), io::Error> {
     Ok(())
 }
 
-/// Adds all files in dotfile path to be committed, commits them,
-/// and pushes the changes to the remote repository.
+// Adds all files in dotfile path to be committed, commits them,
+// and pushes the changes to the remote repository.
 pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
     let mut add = Command::new("git")
         .arg("-C")
@@ -103,7 +101,7 @@ pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
     if out_msg.contains("nothing to commit") && out_msg.contains("up to date") {
         println!("Nothing to update, exiting...");
         exit(0);
-    }
+    };
 
     if has_remote(&dotfile_path) {
         let mut push = Command::new("git")
@@ -127,14 +125,28 @@ pub fn git_update(dotfile_path: &str) -> Result<(), &'static str> {
             .map_err(|_| "could not push changes to new remote repo")?;
 
         push.wait().unwrap();
-    }
+    };
 
     Ok(())
 }
 
-/// Gets the correct path for your dotfiles to be stored.
-/// Removes dots, so $HOME/.config/vimrc is hardlinked to $HOME/dotfile_path/config/vimrc,
-/// for example.
+// If user enters 'git' as first argument, program will run the commands
+// as if 'git -C dotfile_path' was called.
+pub fn run_git(mut commands: Vec<String>, dotfile_path: &str) {
+    commands.insert(1, "-C".to_string());
+    commands.insert(2, format!("{}", dotfile_path));
+
+    let mut handle = Command::new("git")
+        .args(&commands[1..])
+        .spawn()
+        .expect("Couldnt spawn command for git");
+
+    handle.wait().expect("couldnt wait for handle");
+}
+
+// Gets the correct path for your dotfiles to be stored.
+// Removes dots, so $HOME/.config/vimrc is hardlinked to $HOME/dotfile_path/config/vimrc,
+// for example.
 fn get_dest(fullpath: &PathBuf, home: &PathBuf, dotfile_path: &PathBuf) -> PathBuf {
     let home_path_size: usize = home.iter().count();
 
