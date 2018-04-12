@@ -60,7 +60,7 @@ fn main() {
         }
     }
 
-    if files[0] == "git" {
+    if files[0] == "git" && files.len() > 1 {
         run_git(files, &dotfile_path);
     } else {
         match Repository::open(dotfile_path) {
